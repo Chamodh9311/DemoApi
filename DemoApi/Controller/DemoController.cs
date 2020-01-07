@@ -84,7 +84,7 @@ namespace DemoApi.Controller
                 if (ValidateBearerToken(bearerToken))
                 {
                     var response = Request.CreateResponse(HttpStatusCode.OK);
-                    var filePath = HttpContext.Current.Server.MapPath("~/" + fileName + ".txt");
+                    var filePath = HttpContext.Current.Server.MapPath("~/" + fileName + ".txt"); 
 
                     if (!File.Exists(filePath))
                     {
