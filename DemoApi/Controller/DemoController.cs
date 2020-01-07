@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Web;
 using System.Web.Http;
 
@@ -11,62 +13,116 @@ namespace DemoApi.Controller
     public class DemoController : ApiController
     {
         [HttpGet]
-        // GET api/demo/5
-        public HttpResponseMessage GetCustomerList(int id)
+        [Route("Demo/GetCustomerList")]
+        public HttpResponseMessage GetCustomerList()
         {
-            var customer1 = new List<string>() { "ID : 0001", "Name : Jhon Doe", "Email : jhon@live.com" };
-            var customer2 = new List<string>() { "Name : 0002", "Name : Jane Dan", "Email : jane@google.com" };
+            var httpRequest = HttpContext.Current.Request;
+            var bearerToken = httpRequest.Headers["Authorization"].Split(' ')[1];
+
+            if (!ValidateBearerToken(bearerToken)) return UnauthorizedRequest();
+            var customer1 = new List<string>() {"ID : 0001", "Name : John  Doe", "Email : jhon@live.com"};
+            var customer2 = new List<string>() {"Name : 0002", "Name : Jane Dan", "Email : jane@google.com"};
 
             return ControllerContext.Request
-                .CreateResponse(HttpStatusCode.OK, new { customer1, customer2 });
+                .CreateResponse(HttpStatusCode.OK, new {customer1, customer2});
+
         }
 
-        //// POST api/demo
-        //[HttpPost]
-        //public HttpResponseMessage PostNewCustomer([FromBody]string value)
-        //{
-        //    var customer = new List<string>() { "ID : 0003", "Name : Robin Hood", "Email : robin@live.com" };
+        private HttpResponseMessage UnauthorizedRequest()
+        {
+            var unauthorizedRequest = new List<string>() { "Houston we have a problem!" , " Unauthorized request! :(" };
+            return ControllerContext.Request
+                .CreateResponse(HttpStatusCode.Unauthorized , new { unauthorizedRequest });
+        }
 
-        //    return ControllerContext.Request
-        //        .CreateResponse(HttpStatusCode.Created, new { customer });
-        //}
-
-        // POST api/demo
         [HttpPost]
+        [Route("Demo/PutFileUpload")]
         public HttpResponseMessage PutFileUpload()
         {
             try
             {
-                HttpResponseMessage result = null;
                 var httpRequest = HttpContext.Current.Request;
-                var fileuploadPath = ConfigurationManager.AppSettings["FileUploadLocation"];
+                var bearerToken = httpRequest.Headers["Authorization"].Split(' ')[1];
 
+                if (ValidateBearerToken(bearerToken))
                 {
-                    var docfiles = new List<string>();
+                    var docFiles = new List<string>();
+
                     foreach (string file in httpRequest.Files)
                     {
                         var postedFile = httpRequest.Files[file];
                         var filePath = HttpContext.Current.Server.MapPath("~/" + postedFile.FileName);
-                        //var filePath = fileuploadPath + "\\" + postedFile.FileName;
                         postedFile.SaveAs(filePath);
-                        docfiles.Add(filePath);
+                        docFiles.Add(filePath);
                     }
-                    return result = Request.CreateResponse(HttpStatusCode.Created, docfiles);
+
+                    return Request.CreateResponse(HttpStatusCode.Created, docFiles);
+                }
+
+                else
+                {
+                    return UnauthorizedRequest();
                 }
             }
 
             catch (Exception exp)
             {
                 return ControllerContext.Request
-                    .CreateResponse(HttpStatusCode.ExpectationFailed ,new { exp });
+                    .CreateResponse(HttpStatusCode.ExpectationFailed, new {exp});
             }
         }
-        
 
-        // DELETE api/demo/5
-        [HttpDelete]
-        public void Delete(int id)
+        [HttpGet]
+        [Route("Demo/GetFileDownload/{fileName}")]
+        public HttpResponseMessage GetFileDownload(string fileName)
         {
+            try
+            {
+                var httpRequest = HttpContext.Current.Request;
+                var bearerToken = httpRequest.Headers["Authorization"].Split(' ')[1];
+
+                if (ValidateBearerToken(bearerToken))
+                {
+                    var response = Request.CreateResponse(HttpStatusCode.OK);
+                    var filePath = HttpContext.Current.Server.MapPath("~/" + fileName + ".txt");
+
+                    if (!File.Exists(filePath))
+                    {
+                        //Throw 404 (Not Found) exception if File not found.
+                        response.StatusCode = HttpStatusCode.NotFound;
+                        response.ReasonPhrase = $"File not found: {fileName} .";
+                        throw new HttpResponseException(response);
+                    }
+
+                    var bytes = File.ReadAllBytes(filePath);
+                    response.Content = new ByteArrayContent(bytes);
+                    response.Content.Headers.ContentLength = bytes.LongLength;
+                    response.Content.Headers.ContentDisposition =
+                        new ContentDispositionHeaderValue("attachment") {FileName = fileName};
+                    response.Content.Headers.ContentType =
+                        new MediaTypeHeaderValue(MimeMapping.GetMimeMapping(fileName));
+
+                    return response;
+                }
+
+                else
+                {
+                    return UnauthorizedRequest();
+                }
+            }
+
+            catch (Exception exp)
+            {
+                return ControllerContext.Request
+                    .CreateResponse(HttpStatusCode.ExpectationFailed, new {exp});
+            }
+        }
+
+        private static bool ValidateBearerToken(string bearerToken)
+        {
+            var bearerTokenApp = ConfigurationManager.AppSettings["BearerToken"];
+
+            return bearerTokenApp == bearerToken;
         }
     }
 }
