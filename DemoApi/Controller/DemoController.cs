@@ -17,8 +17,8 @@ namespace DemoApi.Controller
         private readonly List<CustomerList> _customerList = new List<CustomerList>();
 
         [HttpGet]
-        [Route("Demo/CreateCustomerList/{id = id}/{email = email}/{name = name}")]
-        public HttpResponseMessage CreateCustomerList(int id, string email, string name)
+        [Route("Demo/CreateCustomer/{id = id}/{email = email}/{name = name}")]
+        public HttpResponseMessage CreateCustomer(int id, string email, string name)
         {
             var httpRequest = HttpContext.Current.Request;
             var bearerToken = httpRequest.Headers["Authorization"].Split(' ')[1];
