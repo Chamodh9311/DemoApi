@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Formatting;
 using System.Net.Http.Headers;
 using System.Web;
 using System.Web.Http;
@@ -16,19 +17,26 @@ namespace DemoApi.Controller
     {
         private readonly List<CustomerList> _customerList = new List<CustomerList>();
 
-        [HttpGet]
-        [Route("Demo/CreateCustomer/{id = id}/{email = email}/{name = name}")]
-        public HttpResponseMessage CreateCustomer(int id, string email, string name)
+        [HttpPost]
+        [Route("Demo/CreateCustomer/")]
+        public HttpResponseMessage CreateCustomer([FromBody] CustomerList customer) 
         {
             var httpRequest = HttpContext.Current.Request;
             var bearerToken = httpRequest.Headers["Authorization"].Split(' ')[1];
             
             if (!ValidateBearerToken(bearerToken)) return UnauthorizedRequest();
 
-            _customerList.Add(new CustomerList{Id = id , Email = email , Name = name });
+            using (var db = new DemoApiContext())
+            {
+
+                db.CustomerLists.Add(customer);
+                db.SaveChanges();
+
+                _customerList.Add(new CustomerList { Id = customer.Id, Name = customer.Name, Email = customer.Email });
+            }
 
             return ControllerContext.Request
-                .CreateResponse(HttpStatusCode.OK, new { _customerList });
+                .CreateResponse(HttpStatusCode.Created, _customerList, JsonMediaTypeFormatter.DefaultMediaType);
 
         }
 
