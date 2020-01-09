@@ -124,63 +124,65 @@ namespace DemoApi.Controller
         }
 
         [HttpPut]
-        [Route("Demo/UpdateCustomer/{id = id}/{email = email}")]
-        public HttpResponseMessage UpdateCustomer(int id, string email)
+        [Route("Demo/UpdateCustomer/")]
+        public HttpResponseMessage UpdateCustomer([FromBody] CustomerList customer)
         {
             var httpRequest = HttpContext.Current.Request;
             var bearerToken = httpRequest.Headers["Authorization"].Split(' ')[1];
 
             if (!ValidateBearerToken(bearerToken)) return UnauthorizedRequest();
 
-            _customerList.Add(new CustomerList { Id = 01, Email = "jhon@live.com", Name = "John Doe" });
-
-            switch (id)
+            using (var db = new DemoApiContext())
             {
-                case 1:
-
-                    var customer1 = _customerList.Select(n =>
-                    {
-                        if (n.Id == 1)
-                        {
-                            n.Email = email;
-                        }
-
-                        return n;
-                    }).First();
+                var result = db.CustomerLists.SingleOrDefault(b => b.Id == customer.Id);
+                if (result != null)
+                {
+                    result.Email = customer.Email;
+                    result.Name = customer.Name;
+                    db.SaveChanges();
 
                     return ControllerContext.Request
-                         .CreateResponse(HttpStatusCode.Created, new { customer1 });
-
-                default:
+                        .CreateResponse(HttpStatusCode.NotFound, result, JsonMediaTypeFormatter.DefaultMediaType);
+                }
+                else
+                {
                     const string error = "Oops! No matching customer ID found!";
 
                     return ControllerContext.Request
-                        .CreateResponse(HttpStatusCode.NotFound, new { error });
+                        .CreateResponse(HttpStatusCode.NotFound, new { error } , JsonMediaTypeFormatter.DefaultMediaType);
+                }
             }
+
         }
 
         [HttpDelete]
-        [Route("Demo/DeleteCustomer/{id = id}")]
-        public HttpResponseMessage DeleteCustomer(int id)
+        [Route("Demo/DeleteCustomer/")]
+        public HttpResponseMessage DeleteCustomer([FromBody] CustomerList customer)
         {
             var httpRequest = HttpContext.Current.Request;
             var bearerToken = httpRequest.Headers["Authorization"].Split(' ')[1];
 
             if (!ValidateBearerToken(bearerToken)) return UnauthorizedRequest();
 
-            switch (id)
+            using (var db = new DemoApiContext())
             {
-                case 1:
+                var result = db.CustomerLists.SingleOrDefault(b => b.Id == customer.Id);
+                if (result != null)
+                {
+                    db.CustomerLists.Attach(result);
+                    db.CustomerLists.Remove(result);
+                    db.SaveChanges();
 
-                    var response = "deleted Id : " + id;
                     return ControllerContext.Request
-                        .CreateResponse(HttpStatusCode.OK, new { response });
-
-                default:
+                        .CreateResponse(HttpStatusCode.OK, result, JsonMediaTypeFormatter.DefaultMediaType);
+                }
+                else
+                {
                     const string error = "Oops! No matching customer ID found!";
 
                     return ControllerContext.Request
-                        .CreateResponse(HttpStatusCode.NotFound, new { error });
+                        .CreateResponse(HttpStatusCode.NotFound, new { error }, JsonMediaTypeFormatter.DefaultMediaType);
+                }
             }
         }
 
