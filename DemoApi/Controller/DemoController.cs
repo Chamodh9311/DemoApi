@@ -1,4 +1,6 @@
-﻿using System;
+﻿using DemoApi.Model;
+
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
@@ -9,7 +11,6 @@ using System.Net.Http.Formatting;
 using System.Net.Http.Headers;
 using System.Web;
 using System.Web.Http;
-using DemoApi.Model;
 
 namespace DemoApi.Controller
 {
@@ -28,11 +29,19 @@ namespace DemoApi.Controller
 
             using (var db = new DemoApiContext())
             {
+                var ifCustomer = db.CustomerLists.FirstOrDefault(i => i.Email == customer.Email);
 
+                if (ifCustomer != null)
+                {
+                    return ControllerContext.Request
+                        .CreateResponse(HttpStatusCode.OK, "Oops! email already in use!", JsonMediaTypeFormatter.DefaultMediaType);
+                }
+
+                customer.CreatedDate = DateTime.Now;
                 db.CustomerLists.Add(customer);
                 db.SaveChanges();
 
-                _customerList.Add(new CustomerList { Id = customer.Id, Name = customer.Name, Email = customer.Email });
+                _customerList.Add(new CustomerList { Id = customer.Id, Name = customer.Name, Email = customer.Email, CreatedDate = customer.CreatedDate});
             }
 
             return ControllerContext.Request
@@ -89,12 +98,12 @@ namespace DemoApi.Controller
                 if (ValidateBearerToken(bearerToken))
                 {
                     var response = Request.CreateResponse(HttpStatusCode.OK);
-                    var filePath = HttpContext.Current.Server.MapPath("~/" + fileName + ".txt"); 
+                    var filePath = HttpContext.Current.Server.MapPath("~/" + fileName ); 
 
                     if (!File.Exists(filePath))
                     {
                         //Throw 404 (Not Found) exception if File not found.
-                        var error = $"File not found: {fileName}.txt";
+                        var error = $"File not found: {fileName}";
                         return ControllerContext.Request
                             .CreateResponse(HttpStatusCode.NotFound, new { error });
                     }
@@ -103,7 +112,7 @@ namespace DemoApi.Controller
                     response.Content = new ByteArrayContent(bytes);
                     response.Content.Headers.ContentLength = bytes.LongLength;
                     response.Content.Headers.ContentDisposition =
-                        new ContentDispositionHeaderValue("attachment") {FileName = fileName+".txt" };
+                        new ContentDispositionHeaderValue("attachment") {FileName = fileName};
                     response.Content.Headers.ContentType =
                         new MediaTypeHeaderValue(MimeMapping.GetMimeMapping(fileName));
 
@@ -123,7 +132,7 @@ namespace DemoApi.Controller
             }
         }
 
-        [HttpPut]
+        [HttpPost]
         [Route("Demo/UpdateCustomer/")]
         public HttpResponseMessage UpdateCustomer([FromBody] CustomerList customer)
         {
@@ -134,7 +143,7 @@ namespace DemoApi.Controller
 
             using (var db = new DemoApiContext())
             {
-                var result = db.CustomerLists.SingleOrDefault(b => b.Id == customer.Id);
+                var result = db.CustomerLists.Where(b => b.Id == customer.Id).FirstOrDefault<CustomerList>();
                 if (result != null)
                 {
                     result.Email = customer.Email;
@@ -155,7 +164,7 @@ namespace DemoApi.Controller
 
         }
 
-        [HttpDelete]
+        [HttpPost]
         [Route("Demo/DeleteCustomer/")]
         public HttpResponseMessage DeleteCustomer([FromBody] CustomerList customer)
         {
