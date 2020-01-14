@@ -1,2 +1,2 @@
 # DemoApi
-Please read the Sample request guide document in the uploads folder 
+Please read the Sample request guide document in the upload folder 
