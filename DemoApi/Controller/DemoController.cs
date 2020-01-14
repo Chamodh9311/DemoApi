@@ -1,4 +1,5 @@
-﻿using DemoApi.Model;
+﻿using DemoApi.Helper;
+using DemoApi.Model;
 
 using System;
 using System.Collections.Generic;
@@ -14,9 +15,11 @@ using System.Web.Http;
 
 namespace DemoApi.Controller
 {
+    [ExceptionHandler]
     public class DemoController : ApiController
     {
         private readonly List<CustomerList> _customerList = new List<CustomerList>();
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         [HttpPost]
         [Route("Demo/CreateCustomer/")]
@@ -24,7 +27,7 @@ namespace DemoApi.Controller
         {
             var httpRequest = HttpContext.Current.Request;
             var bearerToken = httpRequest.Headers["Authorization"].Split(' ')[1];
-            
+
             if (!ValidateBearerToken(bearerToken)) return UnauthorizedRequest();
 
             using (var db = new DemoApiContext())
@@ -143,7 +146,7 @@ namespace DemoApi.Controller
 
             using (var db = new DemoApiContext())
             {
-                var result = db.CustomerLists.Where(b => b.Id == customer.Id).FirstOrDefault<CustomerList>();
+                var result = db.CustomerLists.FirstOrDefault(b => b.Id == customer.Id);
                 if (result != null)
                 {
                     result.Email = customer.Email;
