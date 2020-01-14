@@ -1,34 +1,54 @@
-﻿using System;
+﻿using DemoApi.Helper;
+using DemoApi.Model;
+
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Formatting;
 using System.Net.Http.Headers;
 using System.Web;
 using System.Web.Http;
-using DemoApi.Model;
 
 namespace DemoApi.Controller
 {
+    [ExceptionHandler]
     public class DemoController : ApiController
     {
         private readonly List<CustomerList> _customerList = new List<CustomerList>();
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-        [HttpGet]
-        [Route("Demo/CreateCustomer/{id = id}/{email = email}/{name = name}")]
-        public HttpResponseMessage CreateCustomer(int id, string email, string name)
+        [HttpPost]
+        [Route("Demo/CreateCustomer/")]
+        public HttpResponseMessage CreateCustomer([FromBody] CustomerList customer) 
         {
             var httpRequest = HttpContext.Current.Request;
             var bearerToken = httpRequest.Headers["Authorization"].Split(' ')[1];
-            
+
             if (!ValidateBearerToken(bearerToken)) return UnauthorizedRequest();
 
-            _customerList.Add(new CustomerList{Id = id , Email = email , Name = name });
+            using (var db = new DemoApiContext())
+            {
+                var ifCustomer = db.CustomerLists.FirstOrDefault(i => i.Email == customer.Email);
+
+                if (ifCustomer != null)
+                {
+                    return ControllerContext.Request
+                        .CreateResponse(HttpStatusCode.OK, "Oops! email already in use!", JsonMediaTypeFormatter.DefaultMediaType);
+                }
+
+                customer.CreatedDate = DateTime.Now;
+                db.CustomerLists.Add(customer);
+                db.SaveChanges();
+
+                _customerList.Add(new CustomerList { Id = customer.Id, Name = customer.Name, Email = customer.Email, CreatedDate = customer.CreatedDate});
+            }
 
             return ControllerContext.Request
-                .CreateResponse(HttpStatusCode.OK, new { _customerList });
+                .CreateResponse(HttpStatusCode.Created, _customerList, JsonMediaTypeFormatter.DefaultMediaType);
 
         }
 
@@ -81,12 +101,12 @@ namespace DemoApi.Controller
                 if (ValidateBearerToken(bearerToken))
                 {
                     var response = Request.CreateResponse(HttpStatusCode.OK);
-                    var filePath = HttpContext.Current.Server.MapPath("~/" + fileName + ".txt"); 
+                    var filePath = HttpContext.Current.Server.MapPath("~/" + fileName ); 
 
                     if (!File.Exists(filePath))
                     {
                         //Throw 404 (Not Found) exception if File not found.
-                        var error = $"File not found: {fileName}.txt";
+                        var error = $"File not found: {fileName}";
                         return ControllerContext.Request
                             .CreateResponse(HttpStatusCode.NotFound, new { error });
                     }
@@ -95,7 +115,7 @@ namespace DemoApi.Controller
                     response.Content = new ByteArrayContent(bytes);
                     response.Content.Headers.ContentLength = bytes.LongLength;
                     response.Content.Headers.ContentDisposition =
-                        new ContentDispositionHeaderValue("attachment") {FileName = fileName+".txt" };
+                        new ContentDispositionHeaderValue("attachment") {FileName = fileName};
                     response.Content.Headers.ContentType =
                         new MediaTypeHeaderValue(MimeMapping.GetMimeMapping(fileName));
 
@@ -115,64 +135,66 @@ namespace DemoApi.Controller
             }
         }
 
-        [HttpPut]
-        [Route("Demo/UpdateCustomer/{id = id}/{email = email}")]
-        public HttpResponseMessage UpdateCustomer(int id, string email)
+        [HttpPost]
+        [Route("Demo/UpdateCustomer/")]
+        public HttpResponseMessage UpdateCustomer([FromBody] CustomerList customer)
         {
             var httpRequest = HttpContext.Current.Request;
             var bearerToken = httpRequest.Headers["Authorization"].Split(' ')[1];
 
             if (!ValidateBearerToken(bearerToken)) return UnauthorizedRequest();
 
-            _customerList.Add(new CustomerList { Id = 01, Email = "jhon@live.com", Name = "John Doe" });
-
-            switch (id)
+            using (var db = new DemoApiContext())
             {
-                case 1:
-
-                    var customer1 = _customerList.Select(n =>
-                    {
-                        if (n.Id == 1)
-                        {
-                            n.Email = email;
-                        }
-
-                        return n;
-                    }).First();
+                var result = db.CustomerLists.FirstOrDefault(b => b.Id == customer.Id);
+                if (result != null)
+                {
+                    result.Email = customer.Email;
+                    result.Name = customer.Name;
+                    db.SaveChanges();
 
                     return ControllerContext.Request
-                         .CreateResponse(HttpStatusCode.Created, new { customer1 });
-
-                default:
+                        .CreateResponse(HttpStatusCode.NotFound, result, JsonMediaTypeFormatter.DefaultMediaType);
+                }
+                else
+                {
                     const string error = "Oops! No matching customer ID found!";
 
                     return ControllerContext.Request
-                        .CreateResponse(HttpStatusCode.NotFound, new { error });
+                        .CreateResponse(HttpStatusCode.NotFound, new { error } , JsonMediaTypeFormatter.DefaultMediaType);
+                }
             }
+
         }
 
-        [HttpDelete]
-        [Route("Demo/DeleteCustomer/{id = id}")]
-        public HttpResponseMessage DeleteCustomer(int id)
+        [HttpPost]
+        [Route("Demo/DeleteCustomer/")]
+        public HttpResponseMessage DeleteCustomer([FromBody] CustomerList customer)
         {
             var httpRequest = HttpContext.Current.Request;
             var bearerToken = httpRequest.Headers["Authorization"].Split(' ')[1];
 
             if (!ValidateBearerToken(bearerToken)) return UnauthorizedRequest();
 
-            switch (id)
+            using (var db = new DemoApiContext())
             {
-                case 1:
+                var result = db.CustomerLists.SingleOrDefault(b => b.Id == customer.Id);
+                if (result != null)
+                {
+                    db.CustomerLists.Attach(result);
+                    db.CustomerLists.Remove(result);
+                    db.SaveChanges();
 
-                    var response = "deleted Id : " + id;
                     return ControllerContext.Request
-                        .CreateResponse(HttpStatusCode.OK, new { response });
-
-                default:
+                        .CreateResponse(HttpStatusCode.OK, result, JsonMediaTypeFormatter.DefaultMediaType);
+                }
+                else
+                {
                     const string error = "Oops! No matching customer ID found!";
 
                     return ControllerContext.Request
-                        .CreateResponse(HttpStatusCode.NotFound, new { error });
+                        .CreateResponse(HttpStatusCode.NotFound, new { error }, JsonMediaTypeFormatter.DefaultMediaType);
+                }
             }
         }
 
