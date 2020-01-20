@@ -21,7 +21,6 @@ namespace DemoApi.Controller
         private readonly List<CustomerList> _customerList = new List<CustomerList>();
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-        [HttpPost]
         [Route("Demo/CreateCustomer/")]
         public HttpResponseMessage CreateCustomer([FromBody] CustomerList customer) 
         {
@@ -52,7 +51,6 @@ namespace DemoApi.Controller
 
         }
 
-        [HttpPost]
         [Route("Demo/FileUpload")]
         public HttpResponseMessage FileUpload()
         {
@@ -90,8 +88,8 @@ namespace DemoApi.Controller
         }
 
         [HttpGet]
-        [Route("Demo/FileDownload/{fileName = fileName}")]
-        public HttpResponseMessage FileDownload(string fileName)
+        [Route("Demo/FileDownload/")]
+        public HttpResponseMessage FileDownload([FromBody] FileUpload fileDetails)
         {
             try
             {
@@ -101,12 +99,12 @@ namespace DemoApi.Controller
                 if (ValidateBearerToken(bearerToken))
                 {
                     var response = Request.CreateResponse(HttpStatusCode.OK);
-                    var filePath = HttpContext.Current.Server.MapPath("~/" + fileName ); 
+                    var filePath = HttpContext.Current.Server.MapPath("~/" + fileDetails.FileName ); 
 
                     if (!File.Exists(filePath))
                     {
                         //Throw 404 (Not Found) exception if File not found.
-                        var error = $"File not found: {fileName}";
+                        var error = $"File not found: {fileDetails.FileName}";
                         return ControllerContext.Request
                             .CreateResponse(HttpStatusCode.NotFound, new { error });
                     }
@@ -115,9 +113,9 @@ namespace DemoApi.Controller
                     response.Content = new ByteArrayContent(bytes);
                     response.Content.Headers.ContentLength = bytes.LongLength;
                     response.Content.Headers.ContentDisposition =
-                        new ContentDispositionHeaderValue("attachment") {FileName = fileName};
+                        new ContentDispositionHeaderValue("attachment") {FileName = fileDetails.FileName };
                     response.Content.Headers.ContentType =
-                        new MediaTypeHeaderValue(MimeMapping.GetMimeMapping(fileName));
+                        new MediaTypeHeaderValue(MimeMapping.GetMimeMapping(fileDetails.FileName));
 
                     return response;
                 }
@@ -135,7 +133,7 @@ namespace DemoApi.Controller
             }
         }
 
-        [HttpPost]
+        [HttpPut]
         [Route("Demo/UpdateCustomer/")]
         public HttpResponseMessage UpdateCustomer([FromBody] CustomerList customer)
         {
@@ -167,7 +165,6 @@ namespace DemoApi.Controller
 
         }
 
-        [HttpPost]
         [Route("Demo/DeleteCustomer/")]
         public HttpResponseMessage DeleteCustomer([FromBody] CustomerList customer)
         {
