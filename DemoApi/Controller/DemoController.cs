@@ -21,7 +21,6 @@ namespace DemoApi.Controller
         private readonly List<CustomerList> _customerList = new List<CustomerList>();
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-        [HttpPost]
         [Route("Demo/CreateCustomer/")]
         public HttpResponseMessage CreateCustomer([FromBody] CustomerList customer) 
         {
@@ -52,7 +51,6 @@ namespace DemoApi.Controller
 
         }
 
-        [HttpPost]
         [Route("Demo/FileUpload")]
         public HttpResponseMessage FileUpload()
         {
@@ -89,7 +87,6 @@ namespace DemoApi.Controller
             }
         }
 
-        [HttpGet]
         [Route("Demo/FileDownload/{fileName = fileName}")]
         public HttpResponseMessage FileDownload(string fileName)
         {
@@ -135,7 +132,7 @@ namespace DemoApi.Controller
             }
         }
 
-        [HttpPost]
+        [HttpPut]
         [Route("Demo/UpdateCustomer/")]
         public HttpResponseMessage UpdateCustomer([FromBody] CustomerList customer)
         {
@@ -167,7 +164,6 @@ namespace DemoApi.Controller
 
         }
 
-        [HttpPost]
         [Route("Demo/DeleteCustomer/")]
         public HttpResponseMessage DeleteCustomer([FromBody] CustomerList customer)
         {
