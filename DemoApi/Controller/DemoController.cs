@@ -99,8 +99,8 @@ namespace DemoApi.Controller
                 if (ValidateBearerToken(bearerToken))
                 {
                     var response = Request.CreateResponse(HttpStatusCode.OK);
-                    var filePath = HttpContext.Current.Server.MapPath("~/" + fileDetails.FileName ); 
-
+                    var filePath = httpRequest.MapPath("~/" + fileDetails.FileName ); 
+                    log.Info(filePath.ToString());
                     if (!File.Exists(filePath))
                     {
                         //Throw 404 (Not Found) exception if File not found.
