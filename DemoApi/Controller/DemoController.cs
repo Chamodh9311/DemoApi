@@ -198,7 +198,7 @@ namespace DemoApi.Controller
                     db.SaveChanges();
 
                     return ControllerContext.Request
-                        .CreateResponse(HttpStatusCode.NotFound, result, JsonMediaTypeFormatter.DefaultMediaType);
+                        .CreateResponse(HttpStatusCode.OK, result, JsonMediaTypeFormatter.DefaultMediaType);
                 }
                 else
                 {
