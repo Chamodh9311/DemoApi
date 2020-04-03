@@ -133,6 +133,52 @@ namespace DemoApi.Controller
             }
         }
 
+        [HttpGet]
+        [Route("Demo/FileDownloadPara/{fileName = fileName}")]
+        public HttpResponseMessage FileDownloadPara(string fileName)
+        {
+            try
+            {
+                var httpRequest = HttpContext.Current.Request;
+                var bearerToken = httpRequest.Headers["Authorization"].Split(' ')[1];
+
+                if (ValidateBearerToken(bearerToken))
+                {
+                    var response = Request.CreateResponse(HttpStatusCode.OK);
+                    var filePath = HttpContext.Current.Server.MapPath("~/" + fileName);
+
+                    if (!File.Exists(filePath))
+                    {
+                        //Throw 404 (Not Found) exception if File not found.
+                        var error = $"File not found: {fileName}";
+                        return ControllerContext.Request
+                            .CreateResponse(HttpStatusCode.NotFound, new { error });
+                    }
+
+                    var bytes = File.ReadAllBytes(filePath);
+                    response.Content = new ByteArrayContent(bytes);
+                    response.Content.Headers.ContentLength = bytes.LongLength;
+                    response.Content.Headers.ContentDisposition =
+                        new ContentDispositionHeaderValue("attachment") { FileName = fileName };
+                    response.Content.Headers.ContentType =
+                        new MediaTypeHeaderValue(MimeMapping.GetMimeMapping(fileName));
+
+                    return response;
+                }
+
+                else
+                {
+                    return UnauthorizedRequest();
+                }
+            }
+
+            catch (Exception exp)
+            {
+                return ControllerContext.Request
+                    .CreateResponse(HttpStatusCode.ExpectationFailed, new { exp });
+            }
+        }
+
         [HttpPut]
         [Route("Demo/UpdateCustomer/")]
         public HttpResponseMessage UpdateCustomer([FromBody] CustomerList customer)

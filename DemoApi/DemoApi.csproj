@@ -100,26 +100,6 @@
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Helper\ExceptionHandler.cs" />
-    <Compile Include="Migrations\202001090747358_DempApiDb Schema.cs" />
-    <Compile Include="Migrations\202001090747358_DempApiDb Schema.designer.cs">
-      <DependentUpon>202001090747358_DempApiDb Schema.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202001090817345_migraton 2.cs" />
-    <Compile Include="Migrations\202001090817345_migraton 2.designer.cs">
-      <DependentUpon>202001090817345_migraton 2.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202001090845236_mgration 2.cs" />
-    <Compile Include="Migrations\202001090845236_mgration 2.designer.cs">
-      <DependentUpon>202001090845236_mgration 2.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202001090941196_migration 3.cs" />
-    <Compile Include="Migrations\202001090941196_migration 3.designer.cs">
-      <DependentUpon>202001090941196_migration 3.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202001090942248_migration 4.cs" />
-    <Compile Include="Migrations\202001090942248_migration 4.designer.cs">
-      <DependentUpon>202001090942248_migration 4.cs</DependentUpon>
-    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Model\CustomerList.cs" />
     <Compile Include="Model\DemoApiContext.cs" />
@@ -138,23 +118,6 @@
     <None Include="Web.Release.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Migrations\202001090747358_DempApiDb Schema.resx">
-      <DependentUpon>202001090747358_DempApiDb Schema.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202001090817345_migraton 2.resx">
-      <DependentUpon>202001090817345_migraton 2.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202001090845236_mgration 2.resx">
-      <DependentUpon>202001090845236_mgration 2.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202001090941196_migration 3.resx">
-      <DependentUpon>202001090941196_migration 3.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202001090942248_migration 4.resx">
-      <DependentUpon>202001090942248_migration 4.cs</DependentUpon>
-    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup />
   <PropertyGroup>
